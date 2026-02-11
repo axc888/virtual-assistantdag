@@ -206,7 +206,14 @@ def test_openwebui_connection(webui_url: str, openwebui_api_key: str, verify_ssl
         url = f"{webui_url}/api/v1/models"
         headers = {"Authorization": f"Bearer {openwebui_api_key}"}
         
-        response = requests.get(url, headers=headers, verify=verify_ssl, timeout=10)
+        # CRITICAL: Bypass proxy for internal cluster communication
+        response = requests.get(
+            url, 
+            headers=headers, 
+            verify=verify_ssl, 
+            timeout=30,  # Increased from 10
+            proxies={'http': None, 'https': None}  # Bypass proxy
+        )
         
         if response.status_code == 200:
             logger.info(f"✅ OpenWebUI connection successful: {webui_url}")
@@ -249,7 +256,8 @@ def upload_file_to_webui(file_path: str, webui_url: str, openwebui_api_key: str,
                     headers=headers, 
                     files=files, 
                     timeout=300, 
-                    verify=verify_ssl
+                    verify=verify_ssl,
+                    proxies={'http': None, 'https': None}  # Bypass proxy
                 )
 
             logger.info(f"📡 Upload response status: {response.status_code}")
@@ -318,7 +326,13 @@ def wait_until_processed(file_id: str, file_size_mb: float, webui_url: str,
         elapsed = int(time.time() - start_time)
         
         try:
-            response = requests.get(url, headers=headers, verify=verify_ssl, timeout=30)
+            response = requests.get(
+                url, 
+                headers=headers, 
+                verify=verify_ssl, 
+                timeout=30,
+                proxies={'http': None, 'https': None}  # Bypass proxy
+            )
             
             if response.status_code != 200:
                 logger.warning(f"⚠️ Status check returned {response.status_code}: {response.text}")
@@ -427,7 +441,14 @@ def add_file_to_knowledge(knowledge_id: str, file_id: str, webui_url: str,
     for attempt in range(1, max_retries + 1):
         try:
             logger.info(f"📚 Adding file to knowledge base (attempt {attempt}/{max_retries})...")
-            response = requests.post(url, headers=headers, json=data, verify=verify_ssl, timeout=30)
+            response = requests.post(
+                url, 
+                headers=headers, 
+                json=data, 
+                verify=verify_ssl, 
+                timeout=30,
+                proxies={'http': None, 'https': None}  # Bypass proxy
+            )
             
             if response.status_code == 200:
                 result = response.json()
@@ -470,7 +491,14 @@ def remove_file_from_knowledge(knowledge_id: str, file_id: str, webui_url: str,
     for attempt in range(1, max_retries + 1):
         try:
             logger.info(f"🗑️ Removing file from knowledge base (attempt {attempt}/{max_retries})...")
-            response = requests.post(url, headers=headers, json=data, verify=verify_ssl, timeout=30)
+            response = requests.post(
+                url, 
+                headers=headers, 
+                json=data, 
+                verify=verify_ssl, 
+                timeout=30,
+                proxies={'http': None, 'https': None}  # Bypass proxy
+            )
             
             if response.status_code == 200:
                 logger.info(f"✅ File removed from knowledge base: {file_id}")
@@ -753,7 +781,7 @@ def sync_staging_to_openwebui(**context):
     params = context['params']
     
     logger.info("=" * 80)
-    logger.info("🚀 STAGING → OPENWEBUI INTELLIGENT DELTA SYNC)")
+    logger.info("🚀 STAGING → OPENWEBUI INTELLIGENT DELTA SYNC")
     logger.info("=" * 80)
     logger.info(f"🌐 WebUI URL: {params['webui_url']}")
     logger.info(f"🧠 Knowledge ID: {params['knowledge_id']}")
@@ -923,7 +951,7 @@ dag = DAG(
     tags=['minio', 'openwebui', 'knowledge-base', 'staging', 'delta'],
     params=ParamsDict(
         {
-     # MinIO Configuration
+            # MinIO Configuration
             "minio_endpoint": Param(
                 "",
                 type="string",
@@ -1003,4 +1031,3 @@ sync_task = PythonOperator(
 )
 
 sync_task
-
