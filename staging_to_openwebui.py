@@ -94,7 +94,7 @@ def init_s3_client(minio_endpoint: str, minio_access_key: str,
         endpoint_url = f"http{'s' if minio_secure else ''}://{minio_endpoint}"
         
         # Clear proxy environment variables
-        for proxy_var in ["HTTP_PROXY", "http_proxy", "HTTPS_PROXY", "https_proxy"]:
+        for proxy_var in ["HTTP_PROXY", "http_proxy", "HTTPS_PROXY", "https_proxy", "NO_PROXY", "no_proxy"]:
             os.environ.pop(proxy_var, None)
         
         client = boto3.client(
@@ -1003,3 +1003,4 @@ sync_task = PythonOperator(
 )
 
 sync_task
+
